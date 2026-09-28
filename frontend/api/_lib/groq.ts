@@ -9,7 +9,7 @@
 declare const process: { env: Record<string, string | undefined> };
 
 export const GROQ_BASE = 'https://api.groq.com/openai/v1';
-export const DEFAULT_MODEL = process.env.JARVIS_DEFAULT_MODEL || 'llama-3.3-70b-versatile';
+export const DEFAULT_MODEL = process.env.JARVIS_DEFAULT_MODEL || 'openai/gpt-oss-120b';
 
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -47,4 +47,13 @@ export function checkPassword(req: Request): Response | null {
 // Groq lists speech, guard and TTS models too; only chat models belong in the picker.
 export function isChatModel(id: string): boolean {
   return !/whisper|guard|tts|playai|orpheus|distil/i.test(id);
+}
+
+// Groq retires models over time; when DEFAULT_MODEL is gone, use the first chat model it still lists.
+export async function firstAvailableModel(key: string): Promise<string | null> {
+  const res = await fetch(`${GROQ_BASE}/models`, { headers: { Authorization: `Bearer ${key}` } });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { data?: { id: string }[] };
+  const ids = (body.data || []).map((m) => m.id).filter(isChatModel);
+  return ids.includes(DEFAULT_MODEL) ? DEFAULT_MODEL : ids[0] ?? null;
 }
