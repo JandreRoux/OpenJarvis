@@ -1,5 +1,5 @@
 // Chat: forwards the UI's OpenAI-style request to Groq and streams the reply back.
-import { GROQ_BASE, DEFAULT_MODEL, json, groqKey, checkPassword } from '../../_lib/groq.js';
+import { GROQ_BASE, DEFAULT_MODEL, json, groqKey, checkPassword, firstAvailableModel } from '../../_lib/groq.js';
 
 export const maxDuration = 60;
 
@@ -46,7 +46,10 @@ export async function POST(req: Request): Promise<Response> {
     });
 
   let upstream = await send(body.model);
-  if (upstream.status === 404 && body.model !== DEFAULT_MODEL) upstream = await send(DEFAULT_MODEL);
+  if (upstream.status === 404) {
+    const fallback = await firstAvailableModel(key);
+    if (fallback && fallback !== body.model) upstream = await send(fallback);
+  }
 
   return new Response(upstream.body, {
     status: upstream.status,
