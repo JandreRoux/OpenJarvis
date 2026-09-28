@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci --engine-strict=false",
+  "buildCommand": "vite build --outDir dist",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/health", "destination": "/api/health" },
+    { "source": "/v1/models", "destination": "/api/v1/models" },
+    { "source": "/v1/chat/completions", "destination": "/api/v1/chat/completions" },
+    { "source": "/((?!api/|v1/|assets/).*)", "destination": "/index.html" }
+  ]
+}
